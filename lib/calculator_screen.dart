@@ -12,6 +12,7 @@ class CalculatorScreen extends StatefulWidget {
 class _CalculatorScreenState extends State<CalculatorScreen> {
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
     return Scaffold(
       body: SafeArea(
         bottom: false,
@@ -20,6 +21,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
             //calcutor output
             Expanded(
               child: SingleChildScrollView(
+                reverse: true,
                 child: Container(
                   alignment: Alignment.bottomRight,
                   padding: const EdgeInsets.all(30),
@@ -34,28 +36,49 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
 
             //Buttons section
             Wrap(
-              children: Btn.buttonValues
+                children: Btn.buttonValues
                     .map(
                       (value) => SizedBox(
-                        width:
-                        height:
-                        child: buildButton(value)),
+                          width: screenSize.width / 4,
+                          height: screenSize.width / 5,
+                          child: buildButton(value)),
                     )
-                    .toList()
-              ),
-            
-
+                    .toList()),
           ],
         ),
       ),
     );
   }
 
-
-  Widget buildButton(value){
-    return Text(value);
-
+  Widget buildButton(value) {
+    return Padding(
+      padding: const EdgeInsets.all(2.0),
+      child: Material(
+        color: getBtnColor(value),
+        clipBehavior: Clip.hardEdge,
+        shape: OutlineInputBorder(
+            borderSide: BorderSide(color: Colors.grey),
+            borderRadius: BorderRadius.vertical()),
+        child: InkWell(
+          onTap: () {},
+          child: Center(child: Text(value)),
+        ),
+      ),
+    );
   }
 
-  
+  Color getBtnColor(value) {
+    return [Btn.del, Btn.clr].contains(value)
+        ? Colors.grey
+        : [
+            Btn.per,
+            Btn.multiply,
+            Btn.add,
+            Btn.subtract,
+            Btn.divide,
+            Btn.calculate
+          ].contains(value)
+            ? Colors.blue
+            : Colors.white12;
+  }
 }
