@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'converter_screen.dart';
 
 import 'button_value.dart';
 
@@ -43,17 +44,18 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
 
             // Buttons section
             Wrap(
-              children: Btn.buttonValues
-                  .map(
-                    (value) => SizedBox(
-                      width: value == Btn.n0
-                          ? screenSize.width / 2
-                          : (screenSize.width / 4),
-                      height: screenSize.width / 5,
-                      child: buildButton(value),
-                    ),
-                  )
-                  .toList(),
+              children: [
+                for (var value in Btn.buttonValues)
+                  SizedBox(
+                    width: value == Btn.n0
+                        ? screenSize.width /
+                            4 // Set to one-fourth of the screen width for "0"
+                        : (screenSize.width / 4),
+                    height: screenSize.width / 5,
+                    child: buildButton(value),
+                  ),
+                // Move the "More" button to the end
+              ],
             ),
           ],
         ),
@@ -212,15 +214,18 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
   Color getBtnColor(btnValue) {
     return [Btn.del, Btn.clr].contains(btnValue)
         ? Color.fromARGB(255, 60, 59, 59)
-        : [
-            Btn.subtract,
-            Btn.divide,
-            Btn.per,
-            Btn.multiply,
-            Btn.add,
-            Btn.calculate
-          ].contains(btnValue)
-            ? Color.fromARGB(255, 50, 124, 213)
-            : const Color.fromARGB(255, 96, 93, 93);
+        : btnValue == Btn.more
+            ? Color.fromARGB(
+                255, 255, 74, 3) // Set the color for the "More" button to green
+            : [
+                Btn.subtract,
+                Btn.divide,
+                Btn.per,
+                Btn.multiply,
+                Btn.add,
+                Btn.calculate,
+              ].contains(btnValue)
+                ? Color.fromARGB(255, 50, 124, 213)
+                : const Color.fromARGB(255, 96, 93, 93);
   }
 }
