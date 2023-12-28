@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'converter_screen.dart';
-import 'button_value.dart';
-import 'package:calculator_mobileapp_proj/database_helper.dart';
+import 'package:math_expressions/math_expressions.dart';
+import 'converter_screen.dart'; //
+import 'button_value.dart'; //
+import 'database_helper.dart';
 
 class CalculatorScreen extends StatefulWidget {
   const CalculatorScreen({super.key});
@@ -11,9 +12,7 @@ class CalculatorScreen extends StatefulWidget {
 }
 
 class _CalculatorScreenState extends State<CalculatorScreen> {
-  String input1 = ""; // digits
-  String operation = ""; // math operations
-  String input2 = ""; // digits
+  String expression = "";
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +22,6 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
         bottom: false,
         child: Column(
           children: [
-            // calculator output
             Expanded(
               child: SingleChildScrollView(
                 reverse: true,
@@ -31,9 +29,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                   alignment: Alignment.bottomRight,
                   padding: const EdgeInsets.all(30),
                   child: Text(
-                    "$input1$operation$input2".isEmpty
-                        ? "0"
-                        : "$input1$operation$input2",
+                    expression.isEmpty ? "0" : expression,
                     style: const TextStyle(
                         fontSize: 68, fontWeight: FontWeight.bold),
                     textAlign: TextAlign.end,
@@ -41,20 +37,16 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                 ),
               ),
             ),
-
-            // Buttons section
             Wrap(
               children: [
                 for (var value in Btn.buttonValues)
                   SizedBox(
                     width: value == Btn.n0
-                        ? screenSize.width /
-                            4 // Set to one-fourth of the screen width for "0"
+                        ? screenSize.width / 4
                         : (screenSize.width / 4),
                     height: screenSize.width / 5,
                     child: buildButton(value),
                   ),
-                // Move the "More" button to the end
               ],
             ),
           ],
@@ -73,26 +65,23 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
           borderSide: BorderSide(color: Colors.grey),
           borderRadius: BorderRadius.circular(10),
         ),
-        elevation: 2, // Add elevation for the shadow
-        shadowColor: Colors.grey, // Set the shadow color
+        elevation: 2,
+        shadowColor: Colors.grey,
         child: InkWell(
           onTap: () => onBtnTap(btnValue),
           child: Center(
             child: Text(
               btnValue,
               style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 25,
-                color: Colors.white,
-              ),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 25,
+                  color: Colors.white),
             ),
           ),
         ),
       ),
     );
   }
-
-//Set String Value and Functions
 
   void onBtnTap(String btnValue) {
     if (btnValue == Btn.del) {
@@ -108,125 +97,68 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     }
   }
 
-  // appends value to the end
   void appendValue(String btnValue) {
-    if (btnValue != Btn.dot && int.tryParse(btnValue) == null) {
-      if (operation.isNotEmpty && input2.isNotEmpty) {
-        performCalculation();
-      }
-      operation = btnValue;
-    } else if (input1.isEmpty || operation.isEmpty) {
-      if (btnValue == Btn.dot && input1.contains(Btn.dot)) return;
-      if (btnValue == Btn.dot && (input1.isEmpty || input1 == Btn.n0)) {
-        btnValue = "0.";
-      }
-      input1 += btnValue;
-    } else if (input2.isEmpty || operation.isNotEmpty) {
-      if (btnValue == Btn.dot && input2.contains(Btn.dot)) return;
-      if (btnValue == Btn.dot && (input2.isEmpty || input2 == Btn.n0)) {
-        btnValue = "0.";
-      }
-      input2 += btnValue;
-    }
-
-    setState(() {});
-  }
-
-  // calculates the result
-
-  // converts output to %
-  void convertToPercentage() {
-    if (input1.isNotEmpty && operation.isNotEmpty && input2.isNotEmpty) {
-      performCalculation();
-    }
-
-    if (operation.isNotEmpty) {
-      return;
-    }
-
-    final number = double.parse(input1);
     setState(() {
-      input1 = "${(number / 100)}";
-      operation = "";
-      input2 = "";
+      expression += btnValue;
     });
-  }
-
-  // clears all output
-  void clearAll() {
-    setState(() {
-      input1 = "";
-      operation = "";
-      input2 = "";
-    });
-  }
-
-  // delete one from the end
-  void delete() {
-    if (input2.isNotEmpty) {
-      input2 = input2.substring(0, input2.length - 1);
-    } else if (operation.isNotEmpty) {
-      operation = "";
-    } else if (input1.isNotEmpty) {
-      input1 = input1.substring(0, input1.length - 1);
-    }
-
-    setState(() {});
   }
 
   void performCalculation() {
-    if (input1.isEmpty) return;
-    if (operation.isEmpty) return;
-    if (input2.isEmpty) return;
+    try {
+      Parser p = Parser();
+      Expression exp =
+          p.parse(expression.replaceAll('×', '*').replaceAll('÷', '/'));
+      ContextModel cm = ContextModel();
+      double eval = exp.evaluate(EvaluationType.REAL, cm);
+      String result = eval.toString();
 
-    final double num1 = double.parse(input1);
-    final double num2 = double.parse(input2);
+      // Save the original expression along with the result
+      String historyEntry = expression + ' = ' + result;
 
-    var result = 0.0;
-    switch (operation) {
-      case Btn.add:
-        result = num1 + num2;
-        break;
-      case Btn.subtract:
-        result = num1 - num2;
-        break;
-      case Btn.multiply:
-        result = num1 * num2;
-        break;
-      case Btn.divide:
-        result = num1 / num2;
-        break;
-      default:
+      setState(() {
+        expression = result;
+      });
+
+      saveCalculationToHistory(historyEntry);
+    } catch (e) {
+      // Error handling can be added here
     }
-
-    // Prepare the calculation string for the history
-    String calculationString = '$num1 $operation $num2 = $result';
-
-    setState(() {
-      input1 = result.toStringAsPrecision(3);
-
-      if (input1.endsWith(".0")) {
-        input1 = input1.substring(0, input1.length - 2);
-      }
-
-      // Reset the operation and input2 for the next calculation
-      operation = "";
-      input2 = "";
-
-      // Save to history
-      saveCalculationToHistory(calculationString);
-    });
   }
 
   void saveCalculationToHistory(String calculationResult) {
     var now = DateTime.now();
     String formattedDate =
         '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')} ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}';
-
     DatabaseHelper.instance.insert({
       DatabaseHelper.columnCalculation: calculationResult,
       DatabaseHelper.columnTimestamp: formattedDate,
     });
+  }
+
+  void convertToPercentage() {
+    if (expression.isNotEmpty) {
+      Parser p = Parser();
+      Expression exp = p.parse(expression);
+      ContextModel cm = ContextModel();
+      double eval = exp.evaluate(EvaluationType.REAL, cm) / 100;
+      setState(() {
+        expression = eval.toString();
+      });
+    }
+  }
+
+  void clearAll() {
+    setState(() {
+      expression = "";
+    });
+  }
+
+  void delete() {
+    if (expression.isNotEmpty) {
+      setState(() {
+        expression = expression.substring(0, expression.length - 1);
+      });
+    }
   }
 
   Color getBtnColor(btnValue) {
