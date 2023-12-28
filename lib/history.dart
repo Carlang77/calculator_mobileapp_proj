@@ -1,38 +1,62 @@
 import 'package:flutter/material.dart';
-import 'package:calculator_mobileapp_proj/database_helper.dart'; // Ensure this import is correct
+import 'package:calculator_mobileapp_proj/database_helper.dart';
 
-class HistoryScreen extends StatelessWidget {
+class HistoryScreen extends StatefulWidget {
+  @override
+  _HistoryScreenState createState() => _HistoryScreenState();
+}
+
+class _HistoryScreenState extends State<HistoryScreen> {
+  Future<List<Map<String, dynamic>>>? historyData;
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshHistory();
+  }
+
+  void _refreshHistory() {
+    setState(() {
+      historyData = DatabaseHelper.instance.queryAllRows();
+    });
+  }
+
+  Future<void> _clearHistory() async {
+    await DatabaseHelper.instance.clearHistory();
+    _refreshHistory();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('Calculation History'),
+        actions: <Widget>[
+          IconButton(
+            icon: Icon(Icons.refresh),
+            onPressed:
+                _refreshHistory, // Refresh history when this button is pressed
+          ),
+          IconButton(
+            icon: Icon(Icons.delete),
+            onPressed: _clearHistory,
+          ),
+        ],
       ),
       body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: DatabaseHelper.instance.queryAllRows(),
+        future: historyData,
         builder: (BuildContext context,
             AsyncSnapshot<List<Map<String, dynamic>>> snapshot) {
-          // Check connection state
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(
-                child: CircularProgressIndicator()); // Show loading indicator
+            return Center(child: CircularProgressIndicator());
           }
-
           if (snapshot.hasError) {
-            return Center(
-                child:
-                    Text('Error: ${snapshot.error}')); // Display error message
+            return Center(child: Text('Error: ${snapshot.error}'));
           }
-
-          // Check for data
           if (snapshot.hasData) {
-            // Check if the list is empty
             if (snapshot.data!.isEmpty) {
-              return Center(
-                  child: Text(
-                      'No history found')); // Display message if list is empty
+              return Center(child: Text('No history found'));
             }
-
             return ListView.builder(
               itemCount: snapshot.data!.length,
               itemBuilder: (BuildContext context, int index) {
@@ -44,10 +68,9 @@ class HistoryScreen extends StatelessWidget {
                 );
               },
             );
-          } else {
-            return Center(
-                child: Text('No history found')); // Display message if no data
           }
+          // Default case: when none of the above conditions are met
+          return Center(child: Text('No history found'));
         },
       ),
     );

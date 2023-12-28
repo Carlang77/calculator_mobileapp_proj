@@ -50,4 +50,10 @@ class DatabaseHelper {
     Database db = await instance.database;
     return await db.query(table);
   }
+
+  // Method to clear the history table
+  Future<void> clearHistory() async {
+    Database db = await instance.database;
+    await db.delete(table);
+  }
 }
