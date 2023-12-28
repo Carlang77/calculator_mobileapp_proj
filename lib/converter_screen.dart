@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:calculator_mobileapp_proj/database_helper.dart'; // Import DatabaseHelper
 
 class ConverterScreen extends StatefulWidget {
   @override
@@ -28,11 +29,7 @@ class _ConverterScreenState extends State<ConverterScreen> {
             SizedBox(height: 16.0),
             ElevatedButton(
               onPressed: () {
-                setState(() {
-                  // Perform the conversion logic
-                  double kilometers = double.parse(_kilometerController.text);
-                  _mileResult = kilometers * 0.621371;
-                });
+                convertAndSave();
               },
               child: Text('Convert'),
             ),
@@ -42,5 +39,25 @@ class _ConverterScreenState extends State<ConverterScreen> {
         ),
       ),
     );
+  }
+
+  void convertAndSave() {
+    setState(() {
+      double kilometers = double.tryParse(_kilometerController.text) ?? 0.0;
+      _mileResult = kilometers * 0.621371;
+      saveConversionToHistory(
+          '$kilometers km = ${_mileResult.toStringAsFixed(2)} miles');
+    });
+  }
+
+  void saveConversionToHistory(String conversionResult) {
+    var now = DateTime.now();
+    String formattedDate =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')} ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}';
+
+    DatabaseHelper.instance.insert({
+      DatabaseHelper.columnCalculation: conversionResult,
+      DatabaseHelper.columnTimestamp: formattedDate,
+    });
   }
 }
